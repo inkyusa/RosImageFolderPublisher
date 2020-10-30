@@ -57,6 +57,14 @@ class image_folder_publisher:
         self._frame_id = rospy.get_param('~frame_id', 'camera')
         rospy.loginfo("[%s] (frame_id) Frame ID set to  %s",
                       self.__app_name, self._frame_id)
+        
+        self._save_img_width = rospy.get_param('~save_img_width', '1920')
+        rospy.loginfo("[%s] (save_img_width) set to  %s",
+                      self.__app_name, self._save_img_width)
+        
+        self._save_img_height = rospy.get_param('~save_img_height', '1080')
+        rospy.loginfo("[%s] (save_img_height) set to  %s",
+                      self.__app_name, self._save_img_height)
 
         self._loop = rospy.get_param('~loop', 1)
         rospy.loginfo(
@@ -90,16 +98,7 @@ class image_folder_publisher:
             cv_image = self._cv_bridge.imgmsg_to_cv2(img, "bgr8")
         except CvBridgeError as e:
             print(e)
-
-        # (rows, cols, channels) = cv_image.shape
-        # if cols > 60 and rows > 60:
-        #     cv2.circle(cv_image, (50, 50), 10, 255)
-
-        #cv2.imshow("Image window", cv_image)
-        #cv2.waitKey(0)
-        width = 1920
-        height = 1080
-        dim = (width, height)
+        dim = (self._save_img_width, self._save_img_height)
         resized = cv2.resize(cv_image, dim, interpolation=cv2.INTER_AREA)
         save_path = join(self._output_image_folder, self.img_file_name)
         cv2.imwrite(save_path, resized)

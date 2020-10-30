@@ -6,9 +6,11 @@
     <include file="$(find atd_seg)/launch/atd_seg.launch">
     </include>  -->
 
-        <!-- image publisher-->
+    <!-- image publisher-->
+    <arg name="save_img_width" default="1280"/>
+    <arg name="save_img_height" default="720"/>
     <arg name="input_img_folder_path" default="/home/sa001/workspace/bags/02/2020_05_28_11_48_22/images"/>
-    <arg name="output_img_folder_path" default="/home/sa001/workspace/bags/02/2020_05_28_11_48_22/seg_images"/>
+    <arg name="output_img_folder_path" default="/home/sa001/workspace/bags/02/2020_05_28_11_48_22/seg_images_$(arg save_img_width)_$(arg save_img_height)"/>
 
     <arg name="cam_info_path" default="$(find image_folder_publisher)/yamls/realsenseRGB.yaml"/>
     <node name="image_folder_publisher" pkg="image_folder_publisher" type="image_folder_publisher.py" respawn="false" output="screen">
@@ -18,5 +20,7 @@
         <param name="topic_name_camera_info" value="/camera/camera_info"/>
         <param name="cam_info" value="$(arg cam_info_path)"/>
         <param name="publish_rate" value="5"/>
+        <param name="save_img_width" value="$(arg save_img_width)"/>
+        <param name="save_img_height" value="$(arg save_img_height)"/>
     </node>
 </launch>
