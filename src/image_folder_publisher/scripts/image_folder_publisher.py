@@ -21,6 +21,8 @@ class image_folder_publisher:
     def __init__(self):
         rospack = rospkg.RosPack()
         
+        self.img_saved = True
+        self.img_file_name = ""
 
         self.__app_name = "image_folder_publisher"
         print("path = {}", rospack.get_path(self.__app_name))
@@ -33,6 +35,9 @@ class image_folder_publisher:
 
         self._image_publisher = rospy.Publisher(
             self._topic_name, Image, queue_size=1)
+
+        self._seg_image_sub = rospy.Subscriber("/deeplab/segmentation_colored", Image, self.callback)
+
         
         self._topic_name_camera_info = rospy.get_param('~topic_name_camera_info', '/camera_info')
         rospy.loginfo("[%s] (topic_name) Publishing camera info to topic  %s",
@@ -62,18 +67,48 @@ class image_folder_publisher:
         rospy.loginfo("[%s] (cam_info) Load camera info from %s", self.__app_name, self._camera_info_path)
         self._camera_info = self.yaml_to_CameraInfo(self._camera_info_path)
 
-        self._image_folder = rospy.get_param('~image_folder', '')
+        self._image_folder = rospy.get_param('~input_image_folder', '')
         if self._image_folder == '' or not os.path.exists(self._image_folder) or not os.path.isdir(self._image_folder):
             rospy.logfatal(
-                "[%s] (image_folder) Invalid Image folder", self.__app_name)
+                "[%s] (input_image_folder) Invalid Image folder", self.__app_name)
             sys.exit(0)
         rospy.loginfo("[%s] Reading images from %s",
                       self.__app_name, self._image_folder)
         
+        self._output_image_folder = rospy.get_param('~output_image_folder', '')
+        if not os.path.exists(self._output_image_folder):
+            os.mkdir(self._output_image_folder)
+            print("create {}".format(self._output_image_folder))
+        else:
+            print("{} already exist".format(self._output_image_folder))
+        
+        rospy.loginfo("[%s] Reading images from %s",
+                      self.__app_name, self._image_folder)
+
+    def callback(self, img):
+        try:
+            cv_image = self._cv_bridge.imgmsg_to_cv2(img, "bgr8")
+        except CvBridgeError as e:
+            print(e)
+
+        # (rows, cols, channels) = cv_image.shape
+        # if cols > 60 and rows > 60:
+        #     cv2.circle(cv_image, (50, 50), 10, 255)
+
+        #cv2.imshow("Image window", cv_image)
+        #cv2.waitKey(0)
+        width = 1920
+        height = 1080
+        dim = (width, height)
+        resized = cv2.resize(cv_image, dim, interpolation=cv2.INTER_AREA)
+        save_path = join(self._output_image_folder, self.img_file_name)
+        cv2.imwrite(save_path, resized)
+        self.img_saved = True
+        rospy.loginfo("Saved %s", save_path)
+
 
     def run(self):
         ros_rate = rospy.Rate(self._rate)
-
         files_in_dir = [f for f in listdir(
             self._image_folder) if isfile(join(self._image_folder, f))]
         if self._sort_files:
@@ -83,6 +118,7 @@ class image_folder_publisher:
                 for f in files_in_dir:
                     if not rospy.is_shutdown():
                         if isfile(join(self._image_folder, f)):
+                            self.img_file_name = f
                             cv_image = cv2.imread(join(self._image_folder, f))
                             if cv_image is not None:
                                 ros_msg = self._cv_bridge.cv2_to_imgmsg(
@@ -91,8 +127,8 @@ class image_folder_publisher:
                                 ros_msg.header.stamp = rospy.Time.now()
                                 self._image_publisher.publish(ros_msg)
                                 self._cam_info_publisher.publish(self._camera_info)
-                                rospy.loginfo("[%s] Published %s", self.__app_name, join(
-                                    self._image_folder, f))
+                                #rospy.loginfo("[%s] Published %s", self.__app_name, join(
+                                #    self._image_folder, f))
                             else:
                                 rospy.loginfo("[%s] Invalid image file %s", self.__app_name, join(
                                     self._image_folder, f))

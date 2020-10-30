@@ -7,13 +7,16 @@
     </include>  -->
 
         <!-- image publisher-->
-    <arg name="img_folder_path" default="/home/sa001/workspace/bags/01/2020_05_28_09_37_43/images"/>
+    <arg name="input_img_folder_path" default="/home/sa001/workspace/bags/02/2020_05_28_11_48_22/images"/>
+    <arg name="output_img_folder_path" default="/home/sa001/workspace/bags/02/2020_05_28_11_48_22/seg_images"/>
+
     <arg name="cam_info_path" default="$(find image_folder_publisher)/yamls/realsenseRGB.yaml"/>
     <node name="image_folder_publisher" pkg="image_folder_publisher" type="image_folder_publisher.py" respawn="false" output="screen">
-        <param name="image_folder" value="$(arg img_folder_path)"/>
+        <param name="input_image_folder" value="$(arg input_img_folder_path)"/>
+        <param name="output_image_folder" value="$(arg output_img_folder_path)"/>
         <param name="topic_name" value="/camera/image_raw"/>
         <param name="topic_name_camera_info" value="/camera/camera_info"/>
         <param name="cam_info" value="$(arg cam_info_path)"/>
-        <param name="publish_rate" value="10"/>
+        <param name="publish_rate" value="5"/>
     </node>
 </launch>
